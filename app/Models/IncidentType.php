@@ -6,12 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class IncidentType extends Model
 {
-    protected $fillable = ['name', 'active'];
-
-    protected function casts(): array
-    {
-        return [
-            'active' => 'boolean',
-        ];
-    }
+    //
 }
