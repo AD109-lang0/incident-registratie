@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BeheerController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\IncidentTypeController;
 use App\Models\Incident;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ Route::get('/', function () {
         'recentIncidents' => Incident::latest('occurred_at')->take(3)->get(),
     ]);
 })->name('home');
+
+Route::get('/types', [IncidentTypeController::class, 'index'])->name('incidenttypes');
 
 Route::middleware('auth')->group(function () {
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
@@ -47,5 +50,3 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'showRegistration'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-
-

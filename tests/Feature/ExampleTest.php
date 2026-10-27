@@ -33,6 +33,33 @@ test('the application returns a successful response', function () {
         ->assertSee('<strong>2</strong>', false);
 });
 
+test('visitors can browse active incident types and their incident counts', function () {
+    $activeType = IncidentType::create([
+        'name' => 'Openbare categorie '.uniqid(),
+        'active' => true,
+    ]);
+    $inactiveType = IncidentType::create([
+        'name' => 'Verborgen categorie '.uniqid(),
+        'active' => false,
+    ]);
+
+    $user = User::factory()->create();
+    $user->incidents()->create([
+        'title' => 'Melding bij categorie',
+        'description' => 'Een testmelding.',
+        'location' => 'Kantoor',
+        'occurred_at' => '2026-09-16 09:00:00',
+        'type' => $activeType->name,
+        'status' => 'Open',
+    ]);
+
+    $this->get(route('incidenttypes'))
+        ->assertOk()
+        ->assertSee($activeType->name)
+        ->assertSee('1 melding')
+        ->assertDontSee($inactiveType->name);
+});
+
 test('the login page is available', function () {
     $response = $this->get('/login');
 
@@ -65,13 +92,25 @@ test('users can have each supported role', function () {
         ->and(User::factory()->beheerder()->make()->role)->toBe(UserRole::Beheerder);
 });
 
-test('the database seeder creates an admin user for login', function () {
+test('the database seeder updates the admin user password for login', function () {
+    User::factory()->create([
+        'email' => 'test@example.com',
+        'password' => 'old-password',
+    ]);
+
     $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
 
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'role' => UserRole::Beheerder->value,
     ]);
+
+    $this->post('/login', [
+        'email' => 'test@example.com',
+        'password' => 'password123!',
+    ])->assertRedirect('/');
+
+    $this->assertAuthenticatedAs(User::where('email', 'test@example.com')->firstOrFail());
 });
 
 test('an authenticated user can create an incident', function () {

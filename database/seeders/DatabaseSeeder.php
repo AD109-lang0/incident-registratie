@@ -26,10 +26,13 @@ class DatabaseSeeder extends Seeder
             Location::updateOrCreate(['name' => $name], ['active' => true]);
         }
 
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'test@example.com',
-            'role' => UserRole::Beheerder, 
-        ]);
+        User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => 'password123!',
+                'role' => UserRole::Beheerder,
+            ],
+        );
     }
 }
