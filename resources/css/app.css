@@ -906,3 +906,59 @@ option {
         flex-direction: column;
     }
 }
+
+.topbar {
+    position: fixed;
+    z-index: 100;
+    top: 16px;
+    left: 50%;
+    width: min(1152px, calc(100% - 48px));
+    transform: translateX(-50%);
+}
+
+body {
+    padding-top: 112px;
+}
+
+body.incident-page {
+    padding-top: 0;
+}
+
+@media (max-width: 900px) {
+    body {
+        padding-top: 152px;
+    }
+
+    body.incident-page {
+        padding-top: 60px;
+    }
+}
+
+@media (max-width: 640px) {
+    .topbar {
+        gap: 10px;
+    }
+
+    .topbar .nav {
+        flex-wrap: wrap;
+        gap: 12px 18px;
+    }
+
+    .topbar .actions {
+        width: auto;
+        flex-wrap: wrap;
+    }
+
+    .topbar .btn {
+        width: auto;
+        padding: 10px 14px;
+    }
+
+    body {
+        padding-top: 204px;
+    }
+
+    body.incident-page {
+        padding-top: 104px;
+    }
+}

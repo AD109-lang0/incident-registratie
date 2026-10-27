@@ -113,6 +113,23 @@ test('the database seeder updates the admin user password for login', function (
     $this->assertAuthenticatedAs(User::where('email', 'test@example.com')->firstOrFail());
 });
 
+test('the database seeder creates one account for each supported role', function () {
+    $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
+    $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
+
+    expect(User::query()->whereIn('email', [
+        'test@example.com',
+        'melder@example.com',
+        'coordinator@example.com',
+        'user@example.com',
+    ])->count())->toBe(4);
+
+    $this->assertDatabaseHas('users', ['email' => 'test@example.com', 'role' => UserRole::Beheerder->value]);
+    $this->assertDatabaseHas('users', ['email' => 'melder@example.com', 'role' => UserRole::Melder->value]);
+    $this->assertDatabaseHas('users', ['email' => 'coordinator@example.com', 'role' => UserRole::Coordinator->value]);
+    $this->assertDatabaseHas('users', ['email' => 'user@example.com', 'role' => UserRole::User->value]);
+});
+
 test('an authenticated user can create an incident', function () {
     $user = User::factory()->create();
 
