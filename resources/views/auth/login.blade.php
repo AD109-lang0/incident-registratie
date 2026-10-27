@@ -31,20 +31,6 @@
                 <h2>Open je account</h2>
             </div>
 
-            @if ($errors->any())
-            <div class="auth-alert auth-alert-error">
-                @foreach ($errors->all() as $error)
-                <span>{{ $error }}</span>
-                @endforeach
-            </div>
-            @endif
-
-            @if (session('status'))
-            <div class="auth-alert auth-alert-success">
-                {{ session('status') }}
-            </div>
-            @endif
-
             <form method="POST" action="{{ route('login.post') }}" class="auth-form">
                 @csrf
 

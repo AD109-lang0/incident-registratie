@@ -31,3 +31,5 @@
         @endauth
     </div>
 </header>
+
+<x-flash-messages />

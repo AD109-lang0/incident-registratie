@@ -14,12 +14,6 @@
         <x-layout />
 
         <main>
-            @if (session('status'))
-            <div class="auth-alert auth-alert-success" style="margin-top: 20px;">
-                {{ session('status') }}
-            </div>
-            @endif
-
             <section class="hero">
                 <div>
                     <span class="eyebrow">Veilig • Sneller • Overzichtelijk</span>

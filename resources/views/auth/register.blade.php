@@ -19,22 +19,6 @@
             <p class="mt-2 text-sm text-slate-400">Vul hieronder je gegevens in</p>
         </div>
 
-        @if (session('status'))
-        <div class="auth-alert auth-alert-success">
-            {{ session('status') }}
-        </div>
-        @endif
-
-        @if ($errors->any())
-        <div class="auth-alert auth-alert-error">
-            <ul class="list-disc space-y-1 pl-5">
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
         <form method="POST" action="{{ route('register.post') }}" class="grid gap-5" novalidate>
             @csrf
 

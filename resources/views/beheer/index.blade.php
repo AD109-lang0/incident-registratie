@@ -20,18 +20,6 @@
             <p>Beheer incidenttypes, locaties en gebruikersrollen.</p>
         </div>
 
-        @if (session('status'))
-        <div class="auth-alert auth-alert-success">{{ session('status') }}</div>
-        @endif
-
-        @if ($errors->any())
-        <div class="auth-alert auth-alert-error">
-            @foreach ($errors->all() as $error)
-            <div>{{ $error }}</div>
-            @endforeach
-        </div>
-        @endif
-
         <section class="incident-list-panel">
             <h2>Incidenttypes</h2>
             <form method="POST" action="{{ route('beheer.incidenttypes.store') }}" class="incident-form">

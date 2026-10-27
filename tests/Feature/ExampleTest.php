@@ -68,6 +68,38 @@ test('the login page is available', function () {
         ->assertSee('Wachtwoord');
 });
 
+test('successful login displays a success message', function () {
+    User::factory()->create([
+        'email' => 'login-flash@example.com',
+        'password' => 'secret123',
+    ]);
+
+    $this->followingRedirects()
+        ->post('/login', [
+            'email' => 'login-flash@example.com',
+            'password' => 'secret123',
+        ])
+        ->assertSee('Je bent succesvol ingelogd.');
+});
+
+test('failed login displays a clear error message', function () {
+    $this->followingRedirects()
+        ->post('/login', [
+            'email' => 'missing-flash@example.com',
+            'password' => 'wrong-password',
+        ])
+        ->assertSee('De opgegeven inloggegevens zijn onjuist.');
+});
+
+test('successful logout displays a success message', function () {
+    $user = User::factory()->create();
+
+    $this->followingRedirects()
+        ->actingAs($user)
+        ->post('/logout')
+        ->assertSee('Je bent uitgelogd.');
+});
+
 test('a user can register and be saved to the database', function () {
     $response = $this->post('/register', [
         'name' => 'Test Gebruiker',
@@ -76,7 +108,8 @@ test('a user can register and be saved to the database', function () {
         'password_confirmation' => 'secret123',
     ]);
 
-    $response->assertRedirect('/login');
+    $response->assertRedirect('/login')
+        ->assertSessionHas('status', 'Je account is aangemaakt en je bent ingelogd.');
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test Gebruiker',
