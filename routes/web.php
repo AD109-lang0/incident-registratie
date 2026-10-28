@@ -3,11 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BeheerController;
 use App\Http\Controllers\IncidentController;
-<<<<<<< HEAD
 use App\IncidentStatus;
-=======
 use App\Http\Controllers\IncidentTypeController;
->>>>>>> 0fe8adc0bc413dda243425d35ece3ab4a3fc8607
 use App\Models\Incident;
 use Illuminate\Support\Facades\Route;
 
