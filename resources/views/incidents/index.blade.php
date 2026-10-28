@@ -65,7 +65,7 @@
         </form>
 
         @if ($incidents->isEmpty())
-        <div class="auth-alert auth-alert-success">
+        <div class="auth-alert auth-alert-info">
             Er zijn nog geen incidenten gemeld.
         </div>
         @else

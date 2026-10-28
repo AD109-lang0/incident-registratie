@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\IncidentType;
 use App\Models\Location;
-use App\Models\User;
-use App\UserRole;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -26,10 +24,6 @@ class DatabaseSeeder extends Seeder
             Location::updateOrCreate(['name' => $name], ['active' => true]);
         }
 
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'test@example.com',
-            'role' => UserRole::Beheerder, 
-        ]);
+        $this->call(UserSeeder::class);
     }
 }

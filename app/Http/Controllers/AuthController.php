@@ -18,7 +18,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')->with('status', 'Je bent uitgelogd.');
     }
 
     public function showLogin(): View
@@ -36,7 +36,7 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/');
+            return redirect()->intended('/')->with('status', 'Je bent succesvol ingelogd.');
         }
 
         return back()->withErrors([
@@ -65,6 +65,6 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('login')->with('status', 'Registratie gelukt! Je kunt nu inloggen.');
+        return redirect()->route('login')->with('status', 'Je account is aangemaakt en je bent ingelogd.');
     }
 }

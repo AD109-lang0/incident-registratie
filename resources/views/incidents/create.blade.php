@@ -20,14 +20,6 @@
             <p>Vul hieronder de details van het incident in zodat het team snel kan reageren.</p>
         </div>
 
-        @if ($errors->any())
-        <div class="auth-alert auth-alert-error">
-            @foreach ($errors->all() as $error)
-            <div>{{ $error }}</div>
-            @endforeach
-        </div>
-        @endif
-
         <form method="POST" action="{{ route('incidents.store') }}" class="incident-form">
             @csrf
 

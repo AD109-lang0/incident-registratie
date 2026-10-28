@@ -39,12 +39,71 @@ test('the application returns a successful response', function () {
         ->assertDontSee('Tweede incident');
 });
 
+test('visitors can browse active incident types and their incident counts', function () {
+    $activeType = IncidentType::create([
+        'name' => 'Openbare categorie '.uniqid(),
+        'active' => true,
+    ]);
+    $inactiveType = IncidentType::create([
+        'name' => 'Verborgen categorie '.uniqid(),
+        'active' => false,
+    ]);
+
+    $user = User::factory()->create();
+    $user->incidents()->create([
+        'title' => 'Melding bij categorie',
+        'description' => 'Een testmelding.',
+        'location' => 'Kantoor',
+        'occurred_at' => '2026-09-16 09:00:00',
+        'type' => $activeType->name,
+        'status' => 'Open',
+    ]);
+
+    $this->get(route('incidenttypes'))
+        ->assertOk()
+        ->assertSee($activeType->name)
+        ->assertSee('1 melding')
+        ->assertDontSee($inactiveType->name);
+});
+
 test('the login page is available', function () {
     $response = $this->get('/login');
 
     $response->assertStatus(200)
         ->assertSee('Inloggen')
         ->assertSee('Wachtwoord');
+});
+
+test('successful login displays a success message', function () {
+    User::factory()->create([
+        'email' => 'login-flash@example.com',
+        'password' => 'secret123',
+    ]);
+
+    $this->followingRedirects()
+        ->post('/login', [
+            'email' => 'login-flash@example.com',
+            'password' => 'secret123',
+        ])
+        ->assertSee('Je bent succesvol ingelogd.');
+});
+
+test('failed login displays a clear error message', function () {
+    $this->followingRedirects()
+        ->post('/login', [
+            'email' => 'missing-flash@example.com',
+            'password' => 'wrong-password',
+        ])
+        ->assertSee('De opgegeven inloggegevens zijn onjuist.');
+});
+
+test('successful logout displays a success message', function () {
+    $user = User::factory()->create();
+
+    $this->followingRedirects()
+        ->actingAs($user)
+        ->post('/logout')
+        ->assertSee('Je bent uitgelogd.');
 });
 
 test('a user can register and be saved to the database', function () {
@@ -55,7 +114,8 @@ test('a user can register and be saved to the database', function () {
         'password_confirmation' => 'secret123',
     ]);
 
-    $response->assertRedirect('/login');
+    $response->assertRedirect('/login')
+        ->assertSessionHas('status', 'Je account is aangemaakt en je bent ingelogd.');
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test Gebruiker',
@@ -71,13 +131,42 @@ test('users can have each supported role', function () {
         ->and(User::factory()->beheerder()->make()->role)->toBe(UserRole::Beheerder);
 });
 
-test('the database seeder creates an admin user for login', function () {
+test('the database seeder updates the admin user password for login', function () {
+    User::factory()->create([
+        'email' => 'test@example.com',
+        'password' => 'old-password',
+    ]);
+
     $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
 
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'role' => UserRole::Beheerder->value,
     ]);
+
+    $this->post('/login', [
+        'email' => 'test@example.com',
+        'password' => 'password123!',
+    ])->assertRedirect('/');
+
+    $this->assertAuthenticatedAs(User::where('email', 'test@example.com')->firstOrFail());
+});
+
+test('the database seeder creates one account for each supported role', function () {
+    $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
+    $this->artisan('db:seed', ['--class' => DatabaseSeeder::class])->assertSuccessful();
+
+    expect(User::query()->whereIn('email', [
+        'test@example.com',
+        'melder@example.com',
+        'coordinator@example.com',
+        'user@example.com',
+    ])->count())->toBe(4);
+
+    $this->assertDatabaseHas('users', ['email' => 'test@example.com', 'role' => UserRole::Beheerder->value]);
+    $this->assertDatabaseHas('users', ['email' => 'melder@example.com', 'role' => UserRole::Melder->value]);
+    $this->assertDatabaseHas('users', ['email' => 'coordinator@example.com', 'role' => UserRole::Coordinator->value]);
+    $this->assertDatabaseHas('users', ['email' => 'user@example.com', 'role' => UserRole::User->value]);
 });
 
 test('an authenticated user can create an incident', function () {
