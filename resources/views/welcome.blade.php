@@ -62,21 +62,23 @@
                         <div class="meter"><span @style(['width'=> ($incidentCount === 0 ? 0 : 100 - $resolvedPercentage).'%;'])></span></div>
                     </div>
 
-                    <div class="incident-list">
-                        @forelse ($recentIncidents as $incident)
-                        <div class="incident-item">
-                            <div>
-                                <strong>{{ $incident->title }}</strong>
-                                <p>Locatie: {{ $incident->location }}</p>
+                    @auth
+                        <div class="incident-list">
+                            @forelse ($recentIncidents as $incident)
+                            <div class="incident-item">
+                                <div>
+                                    <strong>{{ $incident->title }}</strong>
+                                    <p>Locatie: {{ $incident->location }}</p>
+                                </div>
+                                <span class="tag info">{{ $incident->status }}</span>
                             </div>
-                            <span class="tag info">{{ $incident->status }}</span>
+                            @empty
+                            <div class="incident-item">
+                                <strong>Nog geen incidenten gemeld</strong>
+                            </div>
+                            @endforelse
                         </div>
-                        @empty
-                        <div class="incident-item">
-                            <strong>Nog geen incidenten gemeld</strong>
-                        </div>
-                        @endforelse
-                    </div>
+                    @endauth
                 </div>
             </section>
 
@@ -99,6 +101,37 @@
                     <span>van alle geregistreerde meldingen</span>
                 </div>
             </section>
+
+            @if ($canViewStatistics)
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Meldingen per type</div>
+                    @forelse ($incidentTypeCounts as $incidentTypeCount)
+                    <p>{{ $incidentTypeCount->type }}: {{ $incidentTypeCount->total }}</p>
+                    @empty
+                    <span>Geen meldingen beschikbaar</span>
+                    @endforelse
+                </div>
+
+                <div class="stat-card">
+                    <div class="label">Meldingen per maand</div>
+                    @forelse ($monthlyIncidentCounts as $month => $total)
+                    <p>{{ $month }}: {{ $total }}</p>
+                    @empty
+                    <span>Geen meldingen beschikbaar</span>
+                    @endforelse
+                </div>
+
+                <div class="stat-card">
+                    <div class="label">Meldingen per locatie</div>
+                    @forelse ($locationCounts as $locationCount)
+                    <p>{{ $locationCount->location }}: {{ $locationCount->total }}</p>
+                    @empty
+                    <span>Geen meldingen beschikbaar</span>
+                    @endforelse
+                </div>
+            </section>
+            @endif
 
             <section id="features" class="feature-grid">
                 <div class="feature-card">

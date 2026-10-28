@@ -46,8 +46,8 @@
                 <div>
                     <label for="status">Status</label>
                     <select id="status" name="status" required>
-                        @foreach (['Open', 'In behandeling', 'Opgelost'] as $status)
-                        <option value="{{ $status }}" @selected(old('status', $incident->status) === $status)>{{ $status }}</option>
+                    @foreach ($statuses as $status)
+                    <option value="{{ $status->value }}" @selected(old('status', $incident->status) === $status->value)>{{ $status->value }}</option>
                         @endforeach
                     </select>
                 </div>

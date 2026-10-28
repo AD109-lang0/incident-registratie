@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\IncidentStatus;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\Location;
@@ -9,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class IncidentController extends Controller
@@ -17,13 +19,17 @@ class IncidentController extends Controller
     {
         $filters = $request->validate([
             'type' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', Rule::enum(IncidentStatus::class)],
             'location' => ['nullable', 'string', 'max:255'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
         $query = Incident::with(['user', 'assignedTo'])
+            ->when(
+                ! $request->user()->isCoordinator() && ! $request->user()->isBeheerder(),
+                fn (Builder $query) => $query->whereBelongsTo($request->user()),
+            )
             ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->where('type', $type))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['location'] ?? null, fn (Builder $query, string $location) => $query->where('location', $location))
@@ -36,7 +42,7 @@ class IncidentController extends Controller
             'incidents' => $incidents,
             'incidentTypes' => IncidentType::orderBy('name')->get(),
             'locations' => Location::orderBy('name')->get(),
-            'statuses' => Incident::query()->select('status')->distinct()->orderBy('status')->pluck('status'),
+            'statuses' => IncidentStatus::cases(),
             'responsibles' => User::orderBy('name')->get(),
             'filters' => $filters,
         ]);
@@ -62,7 +68,7 @@ class IncidentController extends Controller
 
         $request->user()->incidents()->create([
             ...$validated,
-            'status' => 'Open',
+            'status' => IncidentStatus::Nieuw->value,
         ]);
 
         return redirect('/')->with('status', 'Je incident is succesvol gemeld.');

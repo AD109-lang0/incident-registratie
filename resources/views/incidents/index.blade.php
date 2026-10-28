@@ -36,7 +36,7 @@
                     <select id="status" name="status">
                         <option value="">Alle statussen</option>
                         @foreach ($statuses as $status)
-                        <option value="{{ $status }}" @selected(($filters['status'] ?? '' )===$status)>{{ $status }}</option>
+                        <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->value }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -96,11 +96,13 @@
                 @if (auth()->user()->isCoordinator() || auth()->user()->isBeheerder())
                 <div class="incident-actions">
                     <a class="btn btn-outline" href="{{ route('beheer.incidents.edit', $incident) }}">Bewerken</a>
+                    @if (auth()->user()->isBeheerder())
                     <form method="POST" action="{{ route('beheer.incidents.destroy', $incident) }}">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-outline">Verwijderen</button>
                     </form>
+                    @endif
                 </div>
                 @endif
             </article>

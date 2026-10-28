@@ -1,5 +1,6 @@
 <?php
 
+use App\IncidentStatus;
 use App\Models\IncidentType;
 use App\Models\Location;
 use App\Models\User;
@@ -15,7 +16,7 @@ test('the application returns a successful response', function () {
             'location' => 'Kantoor',
             'occurred_at' => '2026-09-16 09:00:00',
             'type' => 'Technisch',
-            'status' => 'Open',
+            'status' => IncidentStatus::Nieuw->value,
         ],
         [
             'title' => 'Tweede incident',
@@ -23,14 +24,19 @@ test('the application returns a successful response', function () {
             'location' => 'Magazijn',
             'occurred_at' => '2026-09-16 10:00:00',
             'type' => 'Veiligheid',
-            'status' => 'Open',
+            'status' => IncidentStatus::Gesloten->value,
         ],
     ]);
 
     $response = $this->get('/');
 
     $response->assertStatus(200)
-        ->assertSee('<strong>2</strong>', false);
+        ->assertSee('<strong>2</strong>', false)
+        ->assertSee('<strong>1</strong> Openstaand', false)
+        ->assertSee('<strong>50%</strong> Opgelost', false)
+        ->assertDontSee('Meldingen per type')
+        ->assertDontSee('Eerste incident')
+        ->assertDontSee('Tweede incident');
 });
 
 test('the login page is available', function () {
@@ -93,10 +99,11 @@ test('an authenticated user can create an incident', function () {
         'location' => 'Kantine',
         'type' => 'Infrastructuur',
         'user_id' => $user->id,
+        'status' => IncidentStatus::Nieuw->value,
     ]);
 });
 
-test('an authenticated user can view all incidents and statuses', function () {
+test('melders see their own incidents while coordinators and administrators see all incidents', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
 
@@ -106,7 +113,7 @@ test('an authenticated user can view all incidents and statuses', function () {
         'location' => 'Kantine',
         'occurred_at' => '2026-09-09 14:30:00',
         'type' => 'Infrastructuur',
-        'status' => 'In behandeling',
+        'status' => IncidentStatus::InOnderzoek->value,
     ]);
 
     $otherUser->incidents()->create([
@@ -115,7 +122,7 @@ test('an authenticated user can view all incidents and statuses', function () {
         'location' => 'Magazijn',
         'occurred_at' => '2026-09-09 15:00:00',
         'type' => 'Veiligheid',
-        'status' => 'Open',
+        'status' => IncidentStatus::Nieuw->value,
     ]);
 
     $response = $this->actingAs($user)->get('/incidents');
@@ -123,9 +130,45 @@ test('an authenticated user can view all incidents and statuses', function () {
     $response->assertOk()
         ->assertSee('Alle incidenten')
         ->assertSee('Netwerk uitval')
-        ->assertSee('In behandeling')
-        ->assertSee('Ander incident')
-        ->assertSee($otherUser->name);
+        ->assertSee('In onderzoek')
+        ->assertSee('Nieuw')
+        ->assertSee('Opgelost')
+        ->assertSee('Gesloten')
+        ->assertDontSee('Ander incident')
+        ->assertDontSee($otherUser->name);
+
+    foreach ([User::factory()->coordinator()->create(), User::factory()->beheerder()->create()] as $privilegedUser) {
+        $incidentsResponse = $this->actingAs($privilegedUser)
+            ->get('/incidents')
+            ->assertOk()
+            ->assertSee('Netwerk uitval')
+            ->assertSee('Ander incident')
+            ->assertSee($otherUser->name);
+
+        if ($privilegedUser->isCoordinator()) {
+            $incidentsResponse->assertSee('Bewerken')
+                ->assertDontSee('Verwijderen');
+        } else {
+            $incidentsResponse->assertSee('Verwijderen');
+        }
+
+        $this->actingAs($privilegedUser)
+            ->get('/')
+            ->assertSee('Netwerk uitval')
+            ->assertSee('Ander incident')
+            ->assertSee('Meldingen per type')
+            ->assertSee('Infrastructuur: 1')
+            ->assertSee('Veiligheid: 1')
+            ->assertSee('2026-09: 2')
+            ->assertSee('Kantine: 1')
+            ->assertSee('Magazijn: 1');
+    }
+
+    $this->actingAs($user)
+        ->get('/')
+        ->assertSee('Netwerk uitval')
+        ->assertDontSee('Ander incident')
+        ->assertDontSee('Meldingen per type');
 });
 
 test('only a beheerder can update or delete incidents', function () {
@@ -137,7 +180,7 @@ test('only a beheerder can update or delete incidents', function () {
         'location' => 'Receptie',
         'occurred_at' => '2026-09-09 14:30:00',
         'type' => 'Hardware',
-        'status' => 'Open',
+        'status' => IncidentStatus::Nieuw->value,
     ]);
 
     $this->actingAs($melder)
@@ -147,7 +190,7 @@ test('only a beheerder can update or delete incidents', function () {
             'location' => 'Receptie',
             'occurred_at' => '2026-09-09 14:30:00',
             'type' => 'Hardware',
-            'status' => 'Opgelost',
+            'status' => IncidentStatus::Opgelost->value,
         ])
         ->assertForbidden();
 
@@ -158,14 +201,14 @@ test('only a beheerder can update or delete incidents', function () {
             'location' => 'Receptie',
             'occurred_at' => '2026-09-09 14:30:00',
             'type' => 'Hardware',
-            'status' => 'Opgelost',
+            'status' => IncidentStatus::Opgelost->value,
         ])
         ->assertRedirect(route('incidents.index'));
 
     $this->assertDatabaseHas('incidents', [
         'id' => $incident->id,
         'title' => 'Aangepast door beheerder',
-        'status' => 'Opgelost',
+        'status' => IncidentStatus::Opgelost->value,
     ]);
 
     $this->actingAs($melder)
@@ -188,7 +231,7 @@ test('a coordinator can filter, assign and update incident handling', function (
         'location' => 'Magazijn',
         'occurred_at' => '2026-09-10 10:00:00',
         'type' => 'Veiligheid',
-        'status' => 'Open',
+        'status' => IncidentStatus::Nieuw->value,
     ]);
     $incident = $responsible->incidents()->create([
         'title' => 'Netwerkprobleem',
@@ -196,11 +239,11 @@ test('a coordinator can filter, assign and update incident handling', function (
         'location' => 'Kantoor',
         'occurred_at' => '2026-09-11 10:00:00',
         'type' => 'Infrastructuur',
-        'status' => 'Open',
+        'status' => IncidentStatus::Nieuw->value,
     ]);
 
     $this->actingAs($coordinator)
-        ->get('/incidents?type=Infrastructuur&date_from=2026-09-11&status=Open&location=Kantoor')
+        ->get('/incidents?type=Infrastructuur&date_from=2026-09-11&status=Nieuw&location=Kantoor')
         ->assertOk()
         ->assertSee('Netwerkprobleem')
         ->assertDontSee('Ander incident');
@@ -212,7 +255,7 @@ test('a coordinator can filter, assign and update incident handling', function (
             'location' => $incident->location,
             'occurred_at' => '2026-09-11 10:00:00',
             'type' => $incident->type,
-            'status' => 'In behandeling',
+            'status' => IncidentStatus::InOnderzoek->value,
             'assigned_to_user_id' => $responsible->id,
             'notes' => 'Coördinator heeft contact opgenomen.',
         ])
@@ -220,9 +263,27 @@ test('a coordinator can filter, assign and update incident handling', function (
 
     $this->assertDatabaseHas('incidents', [
         'id' => $incident->id,
-        'status' => 'In behandeling',
+        'status' => IncidentStatus::InOnderzoek->value,
         'assigned_to_user_id' => $responsible->id,
         'notes' => 'Coördinator heeft contact opgenomen.',
+    ]);
+
+    $this->actingAs($coordinator)
+        ->patch(route('beheer.incidents.update', $incident), [
+            'title' => $incident->title,
+            'description' => $incident->description,
+            'location' => $incident->location,
+            'occurred_at' => '2026-09-11 10:00:00',
+            'type' => $incident->type,
+            'status' => 'Onbekend',
+            'assigned_to_user_id' => $responsible->id,
+            'notes' => 'Deze ongeldige status mag niet worden opgeslagen.',
+        ])
+        ->assertSessionHasErrors('status');
+
+    $this->assertDatabaseHas('incidents', [
+        'id' => $incident->id,
+        'status' => IncidentStatus::InOnderzoek->value,
     ]);
 
     $this->actingAs($responsible)

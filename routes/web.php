@@ -3,20 +3,72 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BeheerController;
 use App\Http\Controllers\IncidentController;
+use App\IncidentStatus;
 use App\Models\Incident;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/', function () {
+    $user = auth()->user();
+    $canViewStatistics = $user && ($user->isCoordinator() || $user->isBeheerder());
     $incidentCount = Incident::count();
-    $resolvedCount = Incident::where('status', 'Opgelost')->count();
+    $resolvedCount = Incident::whereIn('status', [
+        IncidentStatus::Opgelost->value,
+        IncidentStatus::Gesloten->value,
+    ])->count();
+    $recentIncidents = collect();
+    $incidentTypeCounts = collect();
+    $locationCounts = collect();
+    $monthlyIncidentCounts = collect();
+
+    if ($canViewStatistics) {
+        $incidentTypeCounts = Incident::query()
+            ->select('type')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('type')
+            ->orderBy('type')
+            ->get();
+
+        $locationCounts = Incident::query()
+            ->select('location')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('location')
+            ->orderBy('location')
+            ->get();
+
+        $monthlyIncidentCounts = Incident::query()
+            ->selectRaw('DATE(occurred_at) as incident_date, COUNT(*) as total')
+            ->groupByRaw('DATE(occurred_at)')
+            ->orderBy('incident_date')
+            ->get()
+            ->groupBy(fn ($incident) => substr($incident->incident_date, 0, 7))
+            ->map(fn ($dailyCounts) => $dailyCounts->sum('total'));
+    }
+
+    if ($user) {
+        $recentIncidents = Incident::query()
+            ->when(
+                ! $user->isCoordinator() && ! $user->isBeheerder(),
+                fn ($query) => $query->whereBelongsTo($user),
+            )
+            ->latest('occurred_at')
+            ->take(3)
+            ->get();
+    }
 
     return view('welcome', [
         'incidentCount' => $incidentCount,
-        'openIncidentCount' => Incident::where('status', '!=', 'Opgelost')->count(),
+        'openIncidentCount' => Incident::whereIn('status', [
+            IncidentStatus::Nieuw->value,
+            IncidentStatus::InOnderzoek->value,
+        ])->count(),
         'resolvedPercentage' => $incidentCount === 0 ? 0 : round(($resolvedCount / $incidentCount) * 100),
-        'recentIncidents' => Incident::latest('occurred_at')->take(3)->get(),
+        'recentIncidents' => $recentIncidents,
+        'canViewStatistics' => $canViewStatistics,
+        'incidentTypeCounts' => $incidentTypeCounts,
+        'locationCounts' => $locationCounts,
+        'monthlyIncidentCounts' => $monthlyIncidentCounts,
     ]);
 })->name('home');
 
@@ -47,5 +99,3 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'showRegistration'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-
-

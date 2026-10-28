@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\IncidentStatus;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\Location;
@@ -29,6 +30,7 @@ class BeheerController extends Controller
         return view('beheer.incidents.edit', [
             'incident' => $incident->load('assignedTo'),
             'responsibles' => User::orderBy('name')->get(),
+            'statuses' => IncidentStatus::cases(),
         ]);
     }
 
@@ -40,7 +42,7 @@ class BeheerController extends Controller
             'location' => ['required', 'string', 'max:255'],
             'occurred_at' => ['required', 'date'],
             'type' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:255'],
+            'status' => ['required', Rule::enum(IncidentStatus::class)],
             'assigned_to_user_id' => ['nullable', 'exists:users,id'],
             'notes' => ['nullable', 'string'],
         ]));
