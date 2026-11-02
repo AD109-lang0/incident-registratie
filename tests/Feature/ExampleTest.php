@@ -193,6 +193,9 @@ test('an authenticated user can create an incident', function () {
 });
 
 test('melders see their own incidents while coordinators and administrators see all incidents', function () {
+    $this->get(route('coordinator.dashboard'))
+        ->assertRedirect(route('login'));
+
     $user = User::factory()->create();
     $otherUser = User::factory()->create();
 
@@ -245,13 +248,34 @@ test('melders see their own incidents while coordinators and administrators see 
             ->get('/')
             ->assertSee('Netwerk uitval')
             ->assertSee('Ander incident')
-            ->assertSee('Meldingen per type')
-            ->assertSee('Infrastructuur: 1')
-            ->assertSee('Veiligheid: 1')
-            ->assertSee('2026-09: 2')
-            ->assertSee('Kantine: 1')
-            ->assertSee('Magazijn: 1');
+            ->assertDontSee('Meldingen per type');
     }
+
+    $this->actingAs(User::factory()->coordinator()->create())
+        ->get(route('coordinator.dashboard'))
+        ->assertOk()
+        ->assertSee('Coördinator dashboard')
+        ->assertSee('data-chart="types"', false)
+        ->assertSee('data-chart="months"', false)
+        ->assertSee('data-chart="locations"', false)
+        ->assertSee('Meldingen per type')
+        ->assertSee('chart-bar-rose', false)
+        ->assertSee('chart-bar-blue', false)
+        ->assertSee('chart-bar-amber', false)
+        ->assertSee('style="width: 100%"', false)
+        ->assertSee('Infrastructuur: 1')
+        ->assertSee('Veiligheid: 1')
+        ->assertSee('2026-09: 2')
+        ->assertSee('Kantine: 1')
+        ->assertSee('Magazijn: 1');
+
+    $this->actingAs(User::factory()->beheerder()->create())
+        ->get(route('coordinator.dashboard'))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->get(route('coordinator.dashboard'))
+        ->assertForbidden();
 
     $this->actingAs($user)
         ->get('/')

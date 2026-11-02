@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BeheerController;
+use App\Http\Controllers\CoordinatorDashboardController;
 use App\Http\Controllers\IncidentController;
-use App\IncidentStatus;
 use App\Http\Controllers\IncidentTypeController;
+use App\IncidentStatus;
 use App\Models\Incident;
 use Illuminate\Support\Facades\Route;
 
@@ -12,40 +13,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/', function () {
     $user = auth()->user();
-    $canViewStatistics = $user && ($user->isCoordinator() || $user->isBeheerder());
     $incidentCount = Incident::count();
     $resolvedCount = Incident::whereIn('status', [
         IncidentStatus::Opgelost->value,
         IncidentStatus::Gesloten->value,
     ])->count();
     $recentIncidents = collect();
-    $incidentTypeCounts = collect();
-    $locationCounts = collect();
-    $monthlyIncidentCounts = collect();
-
-    if ($canViewStatistics) {
-        $incidentTypeCounts = Incident::query()
-            ->select('type')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('type')
-            ->orderBy('type')
-            ->get();
-
-        $locationCounts = Incident::query()
-            ->select('location')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('location')
-            ->orderBy('location')
-            ->get();
-
-        $monthlyIncidentCounts = Incident::query()
-            ->selectRaw('DATE(occurred_at) as incident_date, COUNT(*) as total')
-            ->groupByRaw('DATE(occurred_at)')
-            ->orderBy('incident_date')
-            ->get()
-            ->groupBy(fn ($incident) => substr($incident->incident_date, 0, 7))
-            ->map(fn ($dailyCounts) => $dailyCounts->sum('total'));
-    }
 
     if ($user) {
         $recentIncidents = Incident::query()
@@ -66,14 +39,14 @@ Route::get('/', function () {
         ])->count(),
         'resolvedPercentage' => $incidentCount === 0 ? 0 : round(($resolvedCount / $incidentCount) * 100),
         'recentIncidents' => $recentIncidents,
-        'canViewStatistics' => $canViewStatistics,
-        'incidentTypeCounts' => $incidentTypeCounts,
-        'locationCounts' => $locationCounts,
-        'monthlyIncidentCounts' => $monthlyIncidentCounts,
     ]);
 })->name('home');
 
 Route::get('/types', [IncidentTypeController::class, 'index'])->name('incidenttypes');
+
+Route::get('/coordinator/dashboard', [CoordinatorDashboardController::class, 'index'])
+    ->middleware(['auth', 'coordinator-only'])
+    ->name('coordinator.dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');

@@ -96,37 +96,6 @@
                 </div>
             </section>
 
-            @if ($canViewStatistics)
-            <section class="stats-grid">
-                <div class="stat-card">
-                    <div class="label">Meldingen per type</div>
-                    @forelse ($incidentTypeCounts as $incidentTypeCount)
-                    <p>{{ $incidentTypeCount->type }}: {{ $incidentTypeCount->total }}</p>
-                    @empty
-                    <span>Geen meldingen beschikbaar</span>
-                    @endforelse
-                </div>
-
-                <div class="stat-card">
-                    <div class="label">Meldingen per maand</div>
-                    @forelse ($monthlyIncidentCounts as $month => $total)
-                    <p>{{ $month }}: {{ $total }}</p>
-                    @empty
-                    <span>Geen meldingen beschikbaar</span>
-                    @endforelse
-                </div>
-
-                <div class="stat-card">
-                    <div class="label">Meldingen per locatie</div>
-                    @forelse ($locationCounts as $locationCount)
-                    <p>{{ $locationCount->location }}: {{ $locationCount->total }}</p>
-                    @empty
-                    <span>Geen meldingen beschikbaar</span>
-                    @endforelse
-                </div>
-            </section>
-            @endif
-
             <section id="features" class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon" style="background: rgba(244,63,94,0.12); color: #fda4af;">⚡</div>

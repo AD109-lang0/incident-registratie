@@ -12,6 +12,9 @@
         <a href="{{ route('incidents.index') }}" class="{{ request()->routeIs('incidents.index') ? 'is-active' : '' }}">Alle meldingen</a>
         <a href="{{ route('incidenttypes') }}" class="{{ request()->routeIs('incidenttypes') ? 'is-active' : '' }}">Types</a>
         @auth
+        @if (auth()->user()->isCoordinator())
+        <a href="{{ route('coordinator.dashboard') }}" class="{{ request()->routeIs('coordinator.dashboard') ? 'is-active' : '' }}">Dashboard</a>
+        @endif
         <a href="{{ route('incidents.create') }}" class="{{ request()->routeIs('incidents.create') ? 'is-active' : '' }}">Melding maken</a>
         @if (auth()->user()->isBeheerder())
         <a href="{{ route('beheer.index') }}" class="{{ request()->routeIs('beheer.*') ? 'is-active' : '' }}">Beheer</a>
