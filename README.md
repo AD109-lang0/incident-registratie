@@ -1,58 +1,91 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Incidentregistratie
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel-applicatie voor het melden, opvolgen en beheren van incidenten. De interface en meldingen zijn Nederlandstalig.
 
-## About Laravel
+## Functionaliteit
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Incidenten melden met type, locatie, datum en beschrijving.
+- Incidenten filteren en opvolgen met de statussen Nieuw, In onderzoek, Opgelost en Gesloten.
+- Verantwoordelijken toewijzen en interne notities toevoegen.
+- Beheercatalogi onderhouden voor incidenttypen en locaties.
+- Inzicht geven in aantallen per type, maand en locatie op het coördinatordashboard.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Rollen
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Rol | Toegang |
+| --- | --- |
+| User / melder | Incidenten melden en eigen incidenten bekijken. |
+| Coördinator | Incidenten bekijken, filteren, toewijzen en opvolgen; toegang tot het coördinatordashboard. |
+| Beheerder | Alle incidenten bekijken en beheren, en gebruikersrollen, incidenttypen en locaties beheren. |
 
-## Learning Laravel
+Een coördinator krijgt geen toegang tot beheerfuncties die alleen voor beheerders bedoeld zijn.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Techniek
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.3 of hoger
+- Laravel 13
+- SQLite als standaarddatabase
+- Vite en Tailwind CSS 4 voor de frontend
+- Pest voor tests
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Lokaal starten
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Installeer PHP, Composer, Node.js en npm. Stel vervolgens de lokale omgeving in:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Dit Composer-script installeert de PHP- en npm-pakketten, maakt zo nodig `.env` aan, genereert een applicatiesleutel, voert migraties uit en bouwt de frontend. De standaardconfiguratie gebruikt SQLite; zorg dat `database/database.sqlite` bestaat voordat de migraties draaien.
 
-## Contributing
+Start daarna de ontwikkelomgeving:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer run dev
+```
 
-## Code of Conduct
+De ontwikkelomgeving start de Laravel-server, de queue-worker en Vite. De applicatie is standaard beschikbaar op `http://localhost:8000`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Demo-accounts
 
-## Security Vulnerabilities
+Maak de standaarddemo-accounts aan met:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan db:seed
+```
 
-## License
+Deze lokale demo-accounts gebruiken het wachtwoord `password123!`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Rol | E-mailadres |
+| --- | --- |
+| Beheerder | `test@example.com` |
+| Melder | `melder@example.com` |
+| Coördinator | `coordinator@example.com` |
+| User | `user@example.com` |
+
+Gebruik deze accounts en wachtwoorden uitsluitend lokaal; wijzig of verwijder ze voordat de applicatie in een gedeelde of productieomgeving wordt gebruikt.
+
+## Belangrijke routes
+
+| Route | Beschrijving | Toegang |
+| --- | --- | --- |
+| `/` | Overzicht en recente incidenten | Publiek; eigen incidenten voor ingelogde melders |
+| `/login` en `/register` | Inloggen en registreren | Publiek |
+| `/incidents` | Incidentenlijst en filters | Ingelogde gebruikers |
+| `/incidents/create` | Een incident melden | Ingelogde gebruikers |
+| `/coordinator/dashboard` | Grafieken per type, maand en locatie | Coördinator |
+| `/beheer` | Catalogi en gebruikersrollen beheren | Beheerder |
+
+## Tests
+
+Voer de volledige testsuite uit met:
+
+```bash
+composer test
+```
+
+Of rechtstreeks met Artisan:
+
+```bash
+php artisan test
+```
