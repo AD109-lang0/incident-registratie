@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->hasRole(UserRole::Beheerder);
     }
 
+    public function canViewAllIncidents(): bool
+    {
+        return $this->hasRole(UserRole::Melder) || $this->isCoordinator() || $this->isBeheerder();
+    }
+
     /**
      * Get the attributes that should be cast.
      *

@@ -23,7 +23,7 @@ Route::get('/', function () {
     if ($user) {
         $recentIncidents = Incident::query()
             ->when(
-                ! $user->isCoordinator() && ! $user->isBeheerder(),
+                ! $user->canViewAllIncidents(),
                 fn ($query) => $query->whereBelongsTo($user),
             )
             ->latest('occurred_at')

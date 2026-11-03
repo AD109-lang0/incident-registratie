@@ -192,11 +192,11 @@ test('an authenticated user can create an incident', function () {
     ]);
 });
 
-test('melders see their own incidents while coordinators and administrators see all incidents', function () {
+test('users see their own incidents while melders, coordinators and administrators see all incidents', function () {
     $this->get(route('coordinator.dashboard'))
         ->assertRedirect(route('login'));
 
-    $user = User::factory()->create();
+    $user = User::factory()->user()->create();
     $otherUser = User::factory()->create();
 
     $user->incidents()->create([
@@ -229,7 +229,11 @@ test('melders see their own incidents while coordinators and administrators see 
         ->assertDontSee('Ander incident')
         ->assertDontSee($otherUser->name);
 
-    foreach ([User::factory()->coordinator()->create(), User::factory()->beheerder()->create()] as $privilegedUser) {
+    foreach ([
+        User::factory()->create(),
+        User::factory()->coordinator()->create(),
+        User::factory()->beheerder()->create(),
+    ] as $privilegedUser) {
         $incidentsResponse = $this->actingAs($privilegedUser)
             ->get('/incidents')
             ->assertOk()
@@ -240,8 +244,12 @@ test('melders see their own incidents while coordinators and administrators see 
         if ($privilegedUser->isCoordinator()) {
             $incidentsResponse->assertSee('Bewerken')
                 ->assertDontSee('Verwijderen');
+        } elseif ($privilegedUser->isBeheerder()) {
+            $incidentsResponse->assertSee('Verwijderen')
+                ->assertSee('Bewerken');
         } else {
-            $incidentsResponse->assertSee('Verwijderen');
+            $incidentsResponse->assertDontSee('Bewerken')
+                ->assertDontSee('Verwijderen');
         }
 
         $this->actingAs($privilegedUser)

@@ -57,7 +57,7 @@ test('every role can report an incident', function (UserRole $role) {
     ]);
 })->with('every user role');
 
-test('users and melders see only their own incident records', function (UserRole $role) {
+test('users see only their own incident records', function (UserRole $role) {
     $user = User::factory()->create(['role' => $role]);
     $otherUser = User::factory()->create();
 
@@ -86,10 +86,9 @@ test('users and melders see only their own incident records', function (UserRole
     $response->assertDontSee('Incident van een ander');
 })->with([
     'user' => [UserRole::User],
-    'melder' => [UserRole::Melder],
 ]);
 
-test('coordinators and administrators see all incident records', function (UserRole $role) {
+test('melders, coordinators and administrators see all incident records', function (UserRole $role) {
     $user = User::factory()->create(['role' => $role]);
     $otherUser = User::factory()->create();
 
@@ -116,6 +115,7 @@ test('coordinators and administrators see all incident records', function (UserR
         ->assertSee('Eigen incident')
         ->assertSee('Incident van een ander');
 })->with([
+    'melder' => [UserRole::Melder],
     'coordinator' => [UserRole::Coordinator],
     'beheerder' => [UserRole::Beheerder],
 ]);

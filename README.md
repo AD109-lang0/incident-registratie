@@ -14,8 +14,9 @@ Laravel-applicatie voor het melden, opvolgen en beheren van incidenten. De inter
 
 | Rol | Toegang |
 | --- | --- |
-| User / melder | Incidenten melden en eigen incidenten bekijken. |
-| Coördinator | Incidenten bekijken, filteren, toewijzen en opvolgen; toegang tot het coördinatordashboard. |
+| User | Incidenten melden en eigen incidenten bekijken. |
+| Melder | Incidenten melden en alle incidenten bekijken. |
+| Coördinator | Alle incidenten bekijken, filteren, toewijzen en opvolgen; toegang tot het coördinatordashboard. |
 | Beheerder | Alle incidenten bekijken en beheren, en gebruikersrollen, incidenttypen en locaties beheren. |
 
 Een coördinator krijgt geen toegang tot beheerfuncties die alleen voor beheerders bedoeld zijn.

@@ -27,7 +27,7 @@ class IncidentController extends Controller
 
         $query = Incident::with(['user', 'assignedTo'])
             ->when(
-                ! $request->user()->isCoordinator() && ! $request->user()->isBeheerder(),
+                ! $request->user()->canViewAllIncidents(),
                 fn (Builder $query) => $query->whereBelongsTo($request->user()),
             )
             ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->where('type', $type))
